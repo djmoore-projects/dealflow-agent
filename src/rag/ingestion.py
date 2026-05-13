@@ -13,11 +13,6 @@ import os
 from pathlib import Path
 from typing import Any
 
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_openai import OpenAIEmbeddings
-from langchain_postgres import PGVector
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -27,16 +22,20 @@ CHUNK_OVERLAP = 100
 COLLECTION_NAME = "deal_documents"
 
 
-def _get_embeddings() -> OpenAIEmbeddings:
-    """Return configured embedding model."""
+def _get_embeddings():  # type: ignore[return]
+    """Return configured embedding model (import deferred to avoid hard dep in tests)."""
+    from langchain_openai import OpenAIEmbeddings
+
     return OpenAIEmbeddings(
         model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),
         openai_api_key=os.getenv("OPENAI_API_KEY", ""),
     )
 
 
-def _get_vector_store() -> PGVector:
+def _get_vector_store():  # type: ignore[return]
     """Return configured PGVector store connected to the running postgres."""
+    from langchain_postgres import PGVector
+
     return PGVector(
         embeddings=_get_embeddings(),
         collection_name=COLLECTION_NAME,
@@ -57,6 +56,9 @@ def ingest_pdf(pdf_path: str | Path, job_id: str) -> int:
     """
     pdf_path = Path(pdf_path)
     logger.info("Starting PDF ingestion", job_id=job_id, path=str(pdf_path))
+
+    from langchain_community.document_loaders import PyPDFLoader
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
 
     loader = PyPDFLoader(str(pdf_path))
     raw_docs = loader.load()
@@ -92,6 +94,8 @@ def ingest_text(text: str, metadata: dict[str, Any], job_id: str) -> int:
         Number of chunks ingested.
     """
     from langchain_core.documents import Document
+
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,

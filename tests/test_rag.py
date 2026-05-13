@@ -31,14 +31,11 @@ def _make_mock_doc(content: str, metadata: dict) -> tuple[MagicMock, float]:
     return doc, 0.92
 
 
-@patch("src.rag.retrieval.PGVector")
-@patch("src.rag.retrieval.OpenAIEmbeddings")
-def test_retrieve_chunks_returns_typed_results(
-    mock_embeddings: MagicMock, mock_pgvector: MagicMock
-) -> None:
+@patch("src.rag.retrieval._get_store")
+def test_retrieve_chunks_returns_typed_results(mock_get_store: MagicMock) -> None:
     """retrieve_chunks returns a list of RetrievedChunk with correct fields."""
     mock_store = MagicMock()
-    mock_pgvector.return_value = mock_store
+    mock_get_store.return_value = mock_store
     mock_store.similarity_search_with_score.return_value = [
         _make_mock_doc("Cap rate: 5.5%", {"page": 3, "source": "deal.pdf", "job_id": "j1"}),
         _make_mock_doc("NOI: $990,000", {"page": 5, "source": "deal.pdf", "job_id": "j1"}),
@@ -56,14 +53,11 @@ def test_retrieve_chunks_returns_typed_results(
     assert results[0].score == pytest.approx(0.92)
 
 
-@patch("src.rag.retrieval.PGVector")
-@patch("src.rag.retrieval.OpenAIEmbeddings")
-def test_retrieve_chunks_passes_job_filter(
-    mock_embeddings: MagicMock, mock_pgvector: MagicMock
-) -> None:
+@patch("src.rag.retrieval._get_store")
+def test_retrieve_chunks_passes_job_filter(mock_get_store: MagicMock) -> None:
     """retrieve_chunks passes job_id filter to the vector store."""
     mock_store = MagicMock()
-    mock_pgvector.return_value = mock_store
+    mock_get_store.return_value = mock_store
     mock_store.similarity_search_with_score.return_value = []
 
     from src.rag.retrieval import retrieve_chunks
@@ -75,14 +69,11 @@ def test_retrieve_chunks_passes_job_filter(
     assert call_kwargs["filter"] == {"job_id": "job-xyz"}
 
 
-@patch("src.rag.retrieval.PGVector")
-@patch("src.rag.retrieval.OpenAIEmbeddings")
-def test_retrieve_chunks_handles_missing_metadata(
-    mock_embeddings: MagicMock, mock_pgvector: MagicMock
-) -> None:
+@patch("src.rag.retrieval._get_store")
+def test_retrieve_chunks_handles_missing_metadata(mock_get_store: MagicMock) -> None:
     """retrieve_chunks handles documents with missing metadata fields gracefully."""
     mock_store = MagicMock()
-    mock_pgvector.return_value = mock_store
+    mock_get_store.return_value = mock_store
     mock_store.similarity_search_with_score.return_value = [
         _make_mock_doc("Some text", {}),  # no page, source, or job_id
     ]

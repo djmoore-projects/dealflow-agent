@@ -6,13 +6,14 @@ gives us a serializable schema that the MCP server can return as JSON and
 the MemoWriter agent can cite with page numbers.
 """
 import os
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from langchain_openai import OpenAIEmbeddings
-from langchain_postgres import PGVector
 from pydantic import BaseModel
 
 from src.utils.logging import get_logger
+
+if TYPE_CHECKING:
+    from langchain_postgres import PGVector
 
 logger = get_logger(__name__)
 
@@ -29,8 +30,15 @@ class RetrievedChunk(BaseModel):
     score: float
 
 
-def _get_store() -> PGVector:
-    """Return the configured vector store (not cached — cheap to construct)."""
+def _get_store() -> "PGVector":
+    """Return the configured vector store (not cached — cheap to construct).
+
+    Imports are deferred so that RetrievedChunk can be imported in tests
+    without requiring langchain_postgres and langchain_openai to be installed.
+    """
+    from langchain_openai import OpenAIEmbeddings
+    from langchain_postgres import PGVector
+
     embeddings = OpenAIEmbeddings(
         model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),
         openai_api_key=os.getenv("OPENAI_API_KEY", ""),
