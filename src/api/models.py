@@ -85,8 +85,19 @@ class MemoResult(BaseModel):
     memo: Optional[dict[str, Any]] = None
     error: Optional[str] = None
 
+    # Observability fields — populated after pipeline completes
+    latency_ms: Optional[int] = None
+    total_tokens: Optional[int] = None
+    langsmith_trace_url: Optional[str] = None  # populated in Workstream B
+
     @classmethod
-    def from_agent_state(cls, job_id: str, state: dict[str, Any]) -> "MemoResult":
+    def from_agent_state(
+        cls,
+        job_id: str,
+        state: dict[str, Any],
+        latency_ms: Optional[int] = None,
+        langsmith_trace_url: Optional[str] = None,
+    ) -> "MemoResult":
         """Construct a MemoResult from a completed AgentState dict."""
         memo_json = state.get("memo_draft")
         memo = json.loads(memo_json) if memo_json else None
@@ -102,4 +113,7 @@ class MemoResult(BaseModel):
             risk_scores=state.get("risk_scores"),
             memo=memo,
             error=state.get("error"),
+            latency_ms=latency_ms,
+            total_tokens=state.get("total_tokens_used"),
+            langsmith_trace_url=langsmith_trace_url,
         )

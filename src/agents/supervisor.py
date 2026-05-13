@@ -17,6 +17,7 @@ that field to decide whether to advance or halt.
 """
 from __future__ import annotations
 
+import operator
 from typing import Annotated, Optional
 
 from langchain_core.messages import BaseMessage
@@ -57,6 +58,10 @@ class AgentState(TypedDict):
     # Observability fields updated by the supervisor on each pass
     current_agent: str
     error: Optional[str]
+
+    # Token usage accumulated across all agent nodes via operator.add reducer.
+    # Each agent returns {"total_tokens_used": N} and LangGraph sums them.
+    total_tokens_used: Annotated[int, operator.add]
 
     # Passed through from the API layer for log correlation
     job_id: str

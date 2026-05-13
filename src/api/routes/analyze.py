@@ -14,9 +14,8 @@ from __future__ import annotations
 
 import asyncio
 import io
-import tempfile
+import time
 import uuid
-from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile
@@ -71,18 +70,25 @@ async def _run_pipeline(job_id: str, document_text: str) -> None:
         "memo_draft": None,
         "current_agent": "supervisor",
         "error": None,
+        "total_tokens_used": 0,
         "job_id": job_id,
     }
 
     try:
+        t0 = time.monotonic()
         final_state = await _GRAPH.ainvoke(initial_state)
+        latency_ms = int((time.monotonic() - t0) * 1000)
+
         JOB_STORE[job_id]["state"] = final_state
+        JOB_STORE[job_id]["latency_ms"] = latency_ms
         has_error = bool(final_state.get("error"))
         JOB_STORE[job_id]["status"] = JobStatus.FAILED if has_error else JobStatus.COMPLETE
         logger.info(
             "Pipeline complete",
             job_id=job_id,
             status=JOB_STORE[job_id]["status"],
+            latency_ms=latency_ms,
+            tokens=final_state.get("total_tokens_used", 0),
             error=final_state.get("error"),
         )
     except Exception as exc:
@@ -176,4 +182,9 @@ async def get_result(job_id: str) -> MemoResult:
         raise HTTPException(status_code=202, detail="Job is still running")
 
     state = job.get("state") or {}
-    return MemoResult.from_agent_state(job_id, state)
+    return MemoResult.from_agent_state(
+        job_id,
+        state,
+        latency_ms=job.get("latency_ms"),
+        langsmith_trace_url=job.get("langsmith_trace_url"),
+    )

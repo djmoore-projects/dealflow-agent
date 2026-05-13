@@ -145,14 +145,16 @@ async def run_memo_writer(state: dict) -> dict:
 
         tool_block = next(b for b in response.content if b.type == "tool_use")
         memo: dict = tool_block.input
+        tokens = response.usage.input_tokens + response.usage.output_tokens
 
         logger.info(
             "MemoWriter complete",
             job_id=job_id,
             recommendation=memo.get("risk_assessment", {}).get("recommendation"),
             citations=len(memo.get("data_citations", [])),
+            tokens=tokens,
         )
-        return {"memo_draft": json.dumps(memo, indent=2)}
+        return {"memo_draft": json.dumps(memo, indent=2), "total_tokens_used": tokens}
 
     except Exception as exc:
         logger.error("MemoWriter failed", job_id=job_id, error=str(exc))

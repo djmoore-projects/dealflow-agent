@@ -48,4 +48,4 @@ app.include_router(analyze_router, tags=["analysis"])
 @app.get("/health", tags=["ops"])
 async def health() -> dict[str, str]:
     """Liveness probe for Docker Compose and ALB health checks."""
-    return {"status": "ok", "service": "dealflow-agent"}
+    return {"status": "ok", "version": "1.0"}

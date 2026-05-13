@@ -102,14 +102,16 @@ async def run_document_analyst(state: dict) -> dict:
 
         tool_block = next(b for b in response.content if b.type == "tool_use")
         deal_metrics: dict = tool_block.input
+        tokens = response.usage.input_tokens + response.usage.output_tokens
 
         logger.info(
             "DocumentAnalyst complete",
             job_id=job_id,
             property=deal_metrics.get("property_name"),
             red_flags=len(deal_metrics.get("red_flags", [])),
+            tokens=tokens,
         )
-        return {"deal_metrics": deal_metrics}
+        return {"deal_metrics": deal_metrics, "total_tokens_used": tokens}
 
     except Exception as exc:
         logger.error("DocumentAnalyst failed", job_id=job_id, error=str(exc))

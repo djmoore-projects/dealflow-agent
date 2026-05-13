@@ -148,14 +148,16 @@ async def run_risk_analyst(state: dict) -> dict:
 
         tool_block = next(b for b in response.content if b.type == "tool_use")
         risk_scores: dict = tool_block.input
+        tokens = response.usage.input_tokens + response.usage.output_tokens
 
         logger.info(
             "RiskAnalyst complete",
             job_id=job_id,
             overall_score=risk_scores.get("overall_risk_score"),
             recommendation=risk_scores.get("investment_recommendation"),
+            tokens=tokens,
         )
-        return {"risk_scores": risk_scores}
+        return {"risk_scores": risk_scores, "total_tokens_used": tokens}
 
     except Exception as exc:
         logger.error("RiskAnalyst failed", job_id=job_id, error=str(exc))

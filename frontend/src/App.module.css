@@ -1,0 +1,149 @@
+/* ── Root ──────────────────────────────────────────────────────────────── */
+.root {
+  min-height: 100vh;
+  background: #f8fafc;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  color: #1e293b;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+.header {
+  background: #0f172a;
+  border-bottom: 1px solid #1e293b;
+}
+
+.headerInner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.logoMark {
+  font-size: 1.25rem;
+  color: #818cf8;
+}
+
+.logoText {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: -0.01em;
+}
+
+.badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #475569;
+  background: #1e293b;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  letter-spacing: 0.03em;
+}
+
+/* ── Main ──────────────────────────────────────────────────────────────── */
+.main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+/* ── Error card ────────────────────────────────────────────────────────── */
+.errorCard {
+  max-width: 540px;
+  margin: 0 auto;
+  background: white;
+  border: 1px solid #fca5a5;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.errorTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #dc2626;
+  margin: 0 0 0.75rem;
+}
+
+.errorBody {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0 0 1.5rem;
+  line-height: 1.6;
+}
+
+.resetBtn {
+  padding: 0.6rem 1.5rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #374151;
+  transition: background 0.15s;
+}
+
+.resetBtn:hover {
+  background: #e2e8f0;
+}
+
+/* ── Init msg ──────────────────────────────────────────────────────────── */
+.initMsg {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  padding: 3rem;
+}
+
+/* ── Results ───────────────────────────────────────────────────────────── */
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.resultsHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.resultsTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.3rem;
+}
+
+.resultsSubtitle {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.resultsSubtitle code {
+  font-family: monospace;
+  background: #f1f5f9;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+}
+
+.memoCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}

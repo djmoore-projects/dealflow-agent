@@ -124,6 +124,7 @@ async def run_market_research(state: dict) -> dict:
     ]
 
     try:
+        total_tokens = 0
         # Agentic loop: Claude may call web_search multiple times before record_market_data
         for _ in range(6):  # max rounds prevents infinite loops
             response = await client.messages.create(
@@ -133,6 +134,7 @@ async def run_market_research(state: dict) -> dict:
                 tools=[_WEB_SEARCH_TOOL, _RECORD_MARKET_DATA_TOOL],
                 messages=messages,
             )
+            total_tokens += response.usage.input_tokens + response.usage.output_tokens
 
             # Check if Claude called record_market_data (we're done)
             record_block = next(
@@ -140,8 +142,8 @@ async def run_market_research(state: dict) -> dict:
                 None,
             )
             if record_block:
-                logger.info("MarketResearch complete", job_id=job_id, market=market)
-                return {"market_data": record_block.input}
+                logger.info("MarketResearch complete", job_id=job_id, market=market, tokens=total_tokens)
+                return {"market_data": record_block.input, "total_tokens_used": total_tokens}
 
             # Process any web_search calls and continue the loop
             tool_results = []
