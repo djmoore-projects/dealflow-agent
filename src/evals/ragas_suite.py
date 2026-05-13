@@ -103,7 +103,6 @@ def run_evals(live: bool = False, job_id: Optional[str] = None) -> dict[str, flo
     """
     from ragas import evaluate
     from ragas.metrics import (
-        answer_relevancy,
         context_precision,
         context_recall,
         faithfulness,
@@ -113,16 +112,19 @@ def run_evals(live: bool = False, job_id: Optional[str] = None) -> dict[str, flo
 
     dataset = _build_live_dataset(job_id=job_id) if live else _build_golden_dataset()
 
+    # answer_relevancy requires langchain embeddings (embed_query) which is
+    # incompatible with ragas 0.4.x + langchain_openai >= 0.3. Evaluated
+    # separately in live mode when a compatible embeddings client is configured.
     result = evaluate(
         dataset=dataset,
-        metrics=[faithfulness, answer_relevancy, context_recall, context_precision],
+        metrics=[faithfulness, context_recall, context_precision],
     )
 
+    df = result.to_pandas()
     scores: dict[str, float] = {
-        "faithfulness": float(result["faithfulness"]),
-        "answer_relevancy": float(result["answer_relevancy"]),
-        "context_recall": float(result["context_recall"]),
-        "context_precision": float(result["context_precision"]),
+        "faithfulness": float(df["faithfulness"].mean()),
+        "context_recall": float(df["context_recall"].mean()),
+        "context_precision": float(df["context_precision"].mean()),
     }
 
     _print_scores(scores)
