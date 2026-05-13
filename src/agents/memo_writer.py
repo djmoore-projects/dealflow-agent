@@ -12,6 +12,7 @@ sections require prose, not just structured data. We validate the output
 by requiring a specific tool call, but allow Claude discretion in forming
 each section's text.
 """
+
 from __future__ import annotations
 
 import json
@@ -44,7 +45,13 @@ _TOOL: dict[str, Any] = {
                     "purchase_price_usd": {"type": "number"},
                     "description": {"type": "string"},
                 },
-                "required": ["name", "type", "market", "purchase_price_usd", "description"],
+                "required": [
+                    "name",
+                    "type",
+                    "market",
+                    "purchase_price_usd",
+                    "description",
+                ],
             },
             "financial_summary": {
                 "type": "object",
@@ -71,7 +78,12 @@ _TOOL: dict[str, Any] = {
                     "key_risks": {"type": "array", "items": {"type": "string"}},
                     "mitigants": {"type": "array", "items": {"type": "string"}},
                 },
-                "required": ["overall_score", "recommendation", "dimension_summary", "key_risks"],
+                "required": [
+                    "overall_score",
+                    "recommendation",
+                    "dimension_summary",
+                    "key_risks",
+                ],
             },
             "recommendation": {
                 "type": "string",
@@ -90,8 +102,13 @@ _TOOL: dict[str, Any] = {
             },
         },
         "required": [
-            "executive_summary", "property_overview", "financial_summary",
-            "market_context", "risk_assessment", "recommendation", "data_citations",
+            "executive_summary",
+            "property_overview",
+            "financial_summary",
+            "market_context",
+            "risk_assessment",
+            "recommendation",
+            "data_citations",
         ],
     },
 }

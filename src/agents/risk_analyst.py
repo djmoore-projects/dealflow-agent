@@ -12,6 +12,7 @@ Each dimension scored 1-5 (1=low risk, 5=high risk) with written rationale
 and supporting evidence citations. This structured output is what the
 MemoWriter uses to populate the Risk Assessment section of the memo.
 """
+
 from __future__ import annotations
 
 import os
@@ -84,7 +85,13 @@ _TOOL: dict[str, Any] = {
             },
             "investment_recommendation": {
                 "type": "string",
-                "enum": ["strong_pass", "pass", "conditional_pass", "decline", "strong_decline"],
+                "enum": [
+                    "strong_pass",
+                    "pass",
+                    "conditional_pass",
+                    "decline",
+                    "strong_decline",
+                ],
             },
             "key_risks": {
                 "type": "array",
@@ -93,9 +100,14 @@ _TOOL: dict[str, Any] = {
             },
         },
         "required": [
-            "market_risk", "financial_risk", "property_risk",
-            "liquidity_risk", "execution_risk", "overall_risk_score",
-            "investment_recommendation", "key_risks",
+            "market_risk",
+            "financial_risk",
+            "property_risk",
+            "liquidity_risk",
+            "execution_risk",
+            "overall_risk_score",
+            "investment_recommendation",
+            "key_risks",
         ],
     },
 }

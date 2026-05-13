@@ -11,9 +11,9 @@ We use unittest.mock.AsyncMock to patch the Anthropic async client.
 The mock returns a pre-built response that mimics the structure of a real
 Anthropic tool_use response block.
 """
+
 from __future__ import annotations
 
-import json
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -79,7 +79,9 @@ async def test_document_analyst_api_error() -> None:
     """DocumentAnalyst writes error to state rather than raising on API failure."""
     with patch("src.agents.document_analyst.anthropic.AsyncAnthropic") as MockClient:
         instance = MockClient.return_value
-        instance.messages.create = AsyncMock(side_effect=RuntimeError("API unavailable"))
+        instance.messages.create = AsyncMock(
+            side_effect=RuntimeError("API unavailable")
+        )
 
         from src.agents.document_analyst import run_document_analyst
 
@@ -94,11 +96,31 @@ async def test_document_analyst_api_error() -> None:
 # --- RiskAnalystAgent ---
 
 MOCK_RISK_SCORES = {
-    "market_risk": {"score": 3, "rationale": "Vacancy trending up", "evidence": ["Q4 7.8%"]},
-    "financial_risk": {"score": 2, "rationale": "DSCR of 1.28 provides cushion", "evidence": ["DSCR: 1.28"]},
-    "property_risk": {"score": 3, "rationale": "HVAC nearing end of life", "evidence": ["Building C HVAC"]},
-    "liquidity_risk": {"score": 2, "rationale": "Austin market is deep", "evidence": []},
-    "execution_risk": {"score": 1, "rationale": "Sponsor has strong track record", "evidence": []},
+    "market_risk": {
+        "score": 3,
+        "rationale": "Vacancy trending up",
+        "evidence": ["Q4 7.8%"],
+    },
+    "financial_risk": {
+        "score": 2,
+        "rationale": "DSCR of 1.28 provides cushion",
+        "evidence": ["DSCR: 1.28"],
+    },
+    "property_risk": {
+        "score": 3,
+        "rationale": "HVAC nearing end of life",
+        "evidence": ["Building C HVAC"],
+    },
+    "liquidity_risk": {
+        "score": 2,
+        "rationale": "Austin market is deep",
+        "evidence": [],
+    },
+    "execution_risk": {
+        "score": 1,
+        "rationale": "Sponsor has strong track record",
+        "evidence": [],
+    },
     "overall_risk_score": 2.2,
     "investment_recommendation": "conditional_pass",
     "key_risks": ["Rising vacancy", "HVAC capex", "Rate sensitivity"],
@@ -119,7 +141,10 @@ async def test_risk_analyst_success() -> None:
         state = {
             "job_id": "test-003",
             "deal_metrics": MOCK_DEAL_METRICS,
-            "market_data": {"market_cap_rate_range": {"low": 0.05, "high": 0.065}, "market_summary": "Stable"},
+            "market_data": {
+                "market_cap_rate_range": {"low": 0.05, "high": 0.065},
+                "market_summary": "Stable",
+            },
         }
         result = await run_risk_analyst(state)
 
@@ -146,14 +171,21 @@ async def test_risk_analyst_api_error() -> None:
 
 # --- Supervisor routing ---
 
+
 def test_supervisor_routes_to_document_analyst() -> None:
     """Supervisor routes to document_analyst when deal_metrics is missing."""
     from src.agents.supervisor import _route
 
     state: dict[str, Any] = {
-        "messages": [], "document_text": "...", "deal_metrics": None,
-        "market_data": None, "risk_scores": None, "memo_draft": None,
-        "current_agent": "supervisor", "error": None, "job_id": "t",
+        "messages": [],
+        "document_text": "...",
+        "deal_metrics": None,
+        "market_data": None,
+        "risk_scores": None,
+        "memo_draft": None,
+        "current_agent": "supervisor",
+        "error": None,
+        "job_id": "t",
     }
     assert _route(state) == "document_analyst"
 
@@ -163,9 +195,15 @@ def test_supervisor_routes_to_market_research() -> None:
     from src.agents.supervisor import _route
 
     state: dict[str, Any] = {
-        "messages": [], "document_text": "...", "deal_metrics": {"property_name": "X"},
-        "market_data": None, "risk_scores": None, "memo_draft": None,
-        "current_agent": "supervisor", "error": None, "job_id": "t",
+        "messages": [],
+        "document_text": "...",
+        "deal_metrics": {"property_name": "X"},
+        "market_data": None,
+        "risk_scores": None,
+        "memo_draft": None,
+        "current_agent": "supervisor",
+        "error": None,
+        "job_id": "t",
     }
     assert _route(state) == "market_research"
 
@@ -177,9 +215,15 @@ def test_supervisor_halts_on_error() -> None:
     from src.agents.supervisor import _route
 
     state: dict[str, Any] = {
-        "messages": [], "document_text": "...", "deal_metrics": None,
-        "market_data": None, "risk_scores": None, "memo_draft": None,
-        "current_agent": "supervisor", "error": "something failed", "job_id": "t",
+        "messages": [],
+        "document_text": "...",
+        "deal_metrics": None,
+        "market_data": None,
+        "risk_scores": None,
+        "memo_draft": None,
+        "current_agent": "supervisor",
+        "error": "something failed",
+        "job_id": "t",
     }
     assert _route(state) == END
 
@@ -191,9 +235,14 @@ def test_supervisor_routes_to_end_when_complete() -> None:
     from src.agents.supervisor import _route
 
     state: dict[str, Any] = {
-        "messages": [], "document_text": "...",
-        "deal_metrics": {"x": 1}, "market_data": {"y": 2},
-        "risk_scores": {"z": 3}, "memo_draft": "{}",
-        "current_agent": "memo_writer", "error": None, "job_id": "t",
+        "messages": [],
+        "document_text": "...",
+        "deal_metrics": {"x": 1},
+        "market_data": {"y": 2},
+        "risk_scores": {"z": 3},
+        "memo_draft": "{}",
+        "current_agent": "memo_writer",
+        "error": None,
+        "job_id": "t",
     }
     assert _route(state) == END

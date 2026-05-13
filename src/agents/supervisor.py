@@ -15,6 +15,7 @@ Pipeline order: document_analyst → market_research → risk_analyst → memo_w
 Each agent writes its output to a dedicated state field; the supervisor reads
 that field to decide whether to advance or halt.
 """
+
 from __future__ import annotations
 
 import operator
@@ -127,7 +128,12 @@ def build_graph() -> StateGraph:
     )
 
     # Every agent returns control to the supervisor after completing
-    for agent_name in ["document_analyst", "market_research", "risk_analyst", "memo_writer"]:
+    for agent_name in [
+        "document_analyst",
+        "market_research",
+        "risk_analyst",
+        "memo_writer",
+    ]:
         builder.add_edge(agent_name, "supervisor")
 
     return builder.compile()

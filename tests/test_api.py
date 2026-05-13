@@ -11,11 +11,11 @@ Tests cover:
   - GET /result: queued/running/complete/failed states
   - GET /health: liveness probe
 """
+
 from __future__ import annotations
 
 import io
 import json
-from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -60,7 +60,9 @@ async def test_analyze_enqueues_job(client: AsyncClient) -> None:
         async with client:
             response = await client.post(
                 "/analyze",
-                files={"file": ("test.pdf", io.BytesIO(_MINIMAL_PDF), "application/pdf")},
+                files={
+                    "file": ("test.pdf", io.BytesIO(_MINIMAL_PDF), "application/pdf")
+                },
             )
 
     assert response.status_code == 202
@@ -166,7 +168,10 @@ async def test_result_complete_job(client: AsyncClient) -> None:
         assert response.status_code == 200
         body = response.json()
         assert body["status"] == JobStatus.COMPLETE
-        assert body["memo"]["executive_summary"] == "Strong deal in Austin multifamily market."
+        assert (
+            body["memo"]["executive_summary"]
+            == "Strong deal in Austin multifamily market."
+        )
     finally:
         JOB_STORE.pop(job_id, None)
 

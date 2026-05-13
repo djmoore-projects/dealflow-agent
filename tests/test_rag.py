@@ -10,10 +10,9 @@ a live database or API keys. They verify:
 For live integration tests against a real database, pass --live flag
 and ensure DATABASE_URL and OPENAI_API_KEY are set.
 """
+
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -22,6 +21,7 @@ from src.rag.retrieval import RetrievedChunk
 
 
 # --- retrieve_chunks ---
+
 
 def _make_mock_doc(content: str, metadata: dict) -> tuple[MagicMock, float]:
     """Build a (Document, score) tuple as returned by pgvector similarity search."""
@@ -37,8 +37,12 @@ def test_retrieve_chunks_returns_typed_results(mock_get_store: MagicMock) -> Non
     mock_store = MagicMock()
     mock_get_store.return_value = mock_store
     mock_store.similarity_search_with_score.return_value = [
-        _make_mock_doc("Cap rate: 5.5%", {"page": 3, "source": "deal.pdf", "job_id": "j1"}),
-        _make_mock_doc("NOI: $990,000", {"page": 5, "source": "deal.pdf", "job_id": "j1"}),
+        _make_mock_doc(
+            "Cap rate: 5.5%", {"page": 3, "source": "deal.pdf", "job_id": "j1"}
+        ),
+        _make_mock_doc(
+            "NOI: $990,000", {"page": 5, "source": "deal.pdf", "job_id": "j1"}
+        ),
     ]
 
     from src.rag.retrieval import retrieve_chunks
@@ -87,6 +91,7 @@ def test_retrieve_chunks_handles_missing_metadata(mock_get_store: MagicMock) -> 
 
 # --- RetrievedChunk model ---
 
+
 def test_retrieved_chunk_serializes() -> None:
     """RetrievedChunk.model_dump() produces a JSON-serializable dict."""
     chunk = RetrievedChunk(
@@ -105,6 +110,7 @@ def test_retrieved_chunk_serializes() -> None:
 
 
 # --- Golden dataset sanity ---
+
 
 def test_golden_dataset_structure() -> None:
     """All golden Q&A pairs have required keys and non-empty values."""

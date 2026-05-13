@@ -9,6 +9,7 @@ Design choices:
 - Metadata (page_number, source) flows through to retrieval results so
   the MemoWriter can emit proper citations.
 """
+
 import os
 from pathlib import Path
 from typing import Any

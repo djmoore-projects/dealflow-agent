@@ -8,6 +8,7 @@ stub data when TAVILY_API_KEY is not set (useful for offline testing).
 The agent passes deal_metrics as context so Claude can form targeted search
 queries (e.g., "Austin TX multifamily cap rates Q1 2025").
 """
+
 from __future__ import annotations
 
 import json
@@ -47,9 +48,18 @@ _RECORD_MARKET_DATA_TOOL: dict[str, Any] = {
                 },
                 "description": "Market cap rate range as decimals",
             },
-            "market_vacancy_rate": {"type": ["number", "null"], "description": "Market vacancy as decimal"},
-            "avg_rent_psf": {"type": ["number", "null"], "description": "Average rent per sq ft per year"},
-            "rent_growth_yoy": {"type": ["number", "null"], "description": "YoY rent growth as decimal"},
+            "market_vacancy_rate": {
+                "type": ["number", "null"],
+                "description": "Market vacancy as decimal",
+            },
+            "avg_rent_psf": {
+                "type": ["number", "null"],
+                "description": "Average rent per sq ft per year",
+            },
+            "rent_growth_yoy": {
+                "type": ["number", "null"],
+                "description": "YoY rent growth as decimal",
+            },
             "comparable_sales": {
                 "type": "array",
                 "items": {
@@ -63,7 +73,10 @@ _RECORD_MARKET_DATA_TOOL: dict[str, Any] = {
                     },
                 },
             },
-            "market_summary": {"type": "string", "description": "2-3 sentence narrative on market conditions"},
+            "market_summary": {
+                "type": "string",
+                "description": "2-3 sentence narrative on market conditions",
+            },
             "data_sources": {"type": "array", "items": {"type": "string"}},
         },
         "required": ["market_cap_rate_range", "market_summary", "data_sources"],
@@ -86,12 +99,17 @@ def _tavily_search(query: str) -> str:
         client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY", ""))
         results = client.search(query=query, max_results=5, search_depth="basic")
         return json.dumps(
-            [{"url": r["url"], "content": r["content"][:500]} for r in results.get("results", [])],
+            [
+                {"url": r["url"], "content": r["content"][:500]}
+                for r in results.get("results", [])
+            ],
             indent=2,
         )
     except Exception as exc:
         logger.warning("Tavily search failed, returning stub", error=str(exc))
-        return json.dumps([{"url": "stub", "content": f"Market data unavailable: {exc}"}])
+        return json.dumps(
+            [{"url": "stub", "content": f"Market data unavailable: {exc}"}]
+        )
 
 
 @traceable(
@@ -145,23 +163,37 @@ async def run_market_research(state: dict) -> dict:
 
             # Check if Claude called record_market_data (we're done)
             record_block = next(
-                (b for b in response.content if b.type == "tool_use" and b.name == "record_market_data"),
+                (
+                    b
+                    for b in response.content
+                    if b.type == "tool_use" and b.name == "record_market_data"
+                ),
                 None,
             )
             if record_block:
-                logger.info("MarketResearch complete", job_id=job_id, market=market, tokens=total_tokens)
-                return {"market_data": record_block.input, "total_tokens_used": total_tokens}
+                logger.info(
+                    "MarketResearch complete",
+                    job_id=job_id,
+                    market=market,
+                    tokens=total_tokens,
+                )
+                return {
+                    "market_data": record_block.input,
+                    "total_tokens_used": total_tokens,
+                }
 
             # Process any web_search calls and continue the loop
             tool_results = []
             for block in response.content:
                 if block.type == "tool_use" and block.name == "web_search":
                     search_result = _tavily_search(block.input["query"])
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
-                        "content": search_result,
-                    })
+                    tool_results.append(
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": search_result,
+                        }
+                    )
 
             if not tool_results:
                 # Model stopped without calling any tool — extract text as fallback
@@ -170,7 +202,9 @@ async def run_market_research(state: dict) -> dict:
             messages.append({"role": "assistant", "content": response.content})
             messages.append({"role": "user", "content": tool_results})
 
-        raise RuntimeError("MarketResearch agent did not call record_market_data within round limit")
+        raise RuntimeError(
+            "MarketResearch agent did not call record_market_data within round limit"
+        )
 
     except Exception as exc:
         logger.error("MarketResearch failed", job_id=job_id, error=str(exc))

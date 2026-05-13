@@ -6,6 +6,7 @@ and shutdown. Order matters: configure_logging() must run before any
 structured log calls; tracing.enable() must run before any LangGraph import
 so LangSmith's LANGCHAIN_TRACING_V2 env var is set before chain construction.
 """
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager

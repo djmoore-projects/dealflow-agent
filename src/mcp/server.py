@@ -23,6 +23,7 @@ Design note: the server is stateless — it does not hold a pgvector connection
 between calls. Each tool invocation constructs a fresh connection, which is
 correct for an MCP server that may sit idle for minutes between calls.
 """
+
 from __future__ import annotations
 
 import sys
@@ -74,7 +75,15 @@ async def query_deal_knowledge_base(query: str, k: int = 5) -> list[dict]:
         logger.error("RAG retrieval failed in MCP tool", error=str(exc))
         # Return error as a structured response rather than raising —
         # MCP clients handle tool errors better than unhandled exceptions.
-        return [{"error": str(exc), "content": "", "page_number": None, "source": None, "score": 0.0}]
+        return [
+            {
+                "error": str(exc),
+                "content": "",
+                "page_number": None,
+                "source": None,
+                "score": 0.0,
+            }
+        ]
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ Returning a typed Pydantic model (rather than raw LangChain Document dicts)
 gives us a serializable schema that the MCP server can return as JSON and
 the MemoWriter agent can cite with page numbers.
 """
+
 import os
 from typing import TYPE_CHECKING, Optional
 

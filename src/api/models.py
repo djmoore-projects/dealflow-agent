@@ -4,6 +4,7 @@ Pydantic models for all API request/response contracts.
 Keeping models in a dedicated module (rather than inline in routes) lets us
 import them from tests without pulling in FastAPI or route dependencies.
 """
+
 from __future__ import annotations
 
 import json
@@ -107,7 +108,9 @@ class MemoResult(BaseModel):
 
         return cls(
             job_id=job_id,
-            status=JobStatus.FAILED if has_error else (JobStatus.COMPLETE if is_complete else JobStatus.RUNNING),
+            status=JobStatus.FAILED
+            if has_error
+            else (JobStatus.COMPLETE if is_complete else JobStatus.RUNNING),
             deal_metrics=state.get("deal_metrics"),
             market_data=state.get("market_data"),
             risk_scores=state.get("risk_scores"),

@@ -18,6 +18,7 @@ require LLM evaluation). Set OPENAI_API_KEY in CI secrets.
 
 CI fails if faithfulness < FAITHFULNESS_THRESHOLD (default 0.75).
 """
+
 from __future__ import annotations
 
 import os
@@ -101,7 +102,12 @@ def run_evals(live: bool = False, job_id: Optional[str] = None) -> dict[str, flo
         SystemExit: If faithfulness score is below FAITHFULNESS_THRESHOLD (for CI).
     """
     from ragas import evaluate
-    from ragas.metrics import answer_relevancy, context_precision, context_recall, faithfulness
+    from ragas.metrics import (
+        answer_relevancy,
+        context_precision,
+        context_recall,
+        faithfulness,
+    )
 
     logger.info("Starting RAGAS evaluation", mode="live" if live else "golden")
 
@@ -129,7 +135,11 @@ def _print_scores(scores: dict[str, float]) -> None:
     print("RAGAS EVALUATION RESULTS")
     print("=" * 50)
     for metric, score in scores.items():
-        status = "PASS" if metric != "faithfulness" or score >= FAITHFULNESS_THRESHOLD else "FAIL"
+        status = (
+            "PASS"
+            if metric != "faithfulness" or score >= FAITHFULNESS_THRESHOLD
+            else "FAIL"
+        )
         print(f"  {metric:<25} {score:.4f}  [{status}]")
     print("=" * 50 + "\n")
 
@@ -144,7 +154,9 @@ def assert_faithfulness(scores: dict[str, float]) -> None:
             threshold=FAITHFULNESS_THRESHOLD,
         )
         sys.exit(1)
-    logger.info("Faithfulness check passed", score=score, threshold=FAITHFULNESS_THRESHOLD)
+    logger.info(
+        "Faithfulness check passed", score=score, threshold=FAITHFULNESS_THRESHOLD
+    )
 
 
 if __name__ == "__main__":

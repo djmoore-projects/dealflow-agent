@@ -10,9 +10,9 @@ Job state is stored in the module-level dict JOB_STORE. In Phase 2 this
 becomes a Redis hash — the interface (job_id → state dict) stays identical,
 only the backing store changes.
 """
+
 from __future__ import annotations
 
-import asyncio
 import io
 import time
 import uuid
@@ -58,7 +58,9 @@ def _extract_pdf_text(pdf_bytes: bytes) -> str:
     return "\n\n".join(pages)
 
 
-async def _run_pipeline(job_id: str, document_text: str, tracing: TracingConfig) -> None:
+async def _run_pipeline(
+    job_id: str, document_text: str, tracing: TracingConfig
+) -> None:
     """Execute the LangGraph pipeline for a job. Runs as a background task."""
     logger.info("Pipeline starting", job_id=job_id)
     JOB_STORE[job_id]["status"] = JobStatus.RUNNING
@@ -98,7 +100,9 @@ async def _run_pipeline(job_id: str, document_text: str, tracing: TracingConfig)
         JOB_STORE[job_id]["langsmith_trace_url"] = tracing.get_run_url(langgraph_run_id)
 
         has_error = bool(final_state.get("error"))
-        JOB_STORE[job_id]["status"] = JobStatus.FAILED if has_error else JobStatus.COMPLETE
+        JOB_STORE[job_id]["status"] = (
+            JobStatus.FAILED if has_error else JobStatus.COMPLETE
+        )
         logger.info(
             "Pipeline complete",
             job_id=job_id,
@@ -138,17 +142,31 @@ async def analyze(
     try:
         document_text = _extract_pdf_text(pdf_bytes)
     except Exception as exc:
-        raise HTTPException(status_code=422, detail=f"PDF extraction failed: {exc}") from exc
+        raise HTTPException(
+            status_code=422, detail=f"PDF extraction failed: {exc}"
+        ) from exc
 
     if not document_text.strip():
-        raise HTTPException(status_code=422, detail="PDF contains no extractable text (may be scanned image)")
+        raise HTTPException(
+            status_code=422,
+            detail="PDF contains no extractable text (may be scanned image)",
+        )
 
     job_id = str(uuid.uuid4())
     JOB_STORE[job_id] = {"status": JobStatus.QUEUED, "state": None, "error": None}
 
-    tracing: TracingConfig = getattr(request.app.state, "tracing", TracingConfig(api_key=None, project="dealflow-agent"))
+    tracing: TracingConfig = getattr(
+        request.app.state,
+        "tracing",
+        TracingConfig(api_key=None, project="dealflow-agent"),
+    )
     background_tasks.add_task(_run_pipeline, job_id, document_text, tracing)
-    logger.info("Job enqueued", job_id=job_id, filename=file.filename, text_chars=len(document_text))
+    logger.info(
+        "Job enqueued",
+        job_id=job_id,
+        filename=file.filename,
+        text_chars=len(document_text),
+    )
 
     return AnalyzeResponse(job_id=job_id)
 

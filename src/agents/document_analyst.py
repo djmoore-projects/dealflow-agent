@@ -10,6 +10,7 @@ Claude to produce a valid tool call. This gives us:
 - A clear failure mode: exceptions are caught and written to state.error,
   halting the pipeline with a debuggable message.
 """
+
 from __future__ import annotations
 
 import os
@@ -32,30 +33,59 @@ _TOOL: dict[str, Any] = {
     "input_schema": {
         "type": "object",
         "properties": {
-            "property_name": {"type": "string", "description": "Name or address of the property"},
+            "property_name": {
+                "type": "string",
+                "description": "Name or address of the property",
+            },
             "property_type": {
                 "type": "string",
-                "enum": ["multifamily", "office", "retail", "industrial", "mixed-use", "hotel", "other"],
+                "enum": [
+                    "multifamily",
+                    "office",
+                    "retail",
+                    "industrial",
+                    "mixed-use",
+                    "hotel",
+                    "other",
+                ],
             },
             "market": {"type": "string", "description": "City or MSA"},
             "submarket": {"type": ["string", "null"]},
             "purchase_price": {"type": "number", "description": "USD"},
-            "noi": {"type": ["number", "null"], "description": "Annual Net Operating Income, USD"},
-            "cap_rate": {"type": ["number", "null"], "description": "As decimal, e.g. 0.055 for 5.5%"},
+            "noi": {
+                "type": ["number", "null"],
+                "description": "Annual Net Operating Income, USD",
+            },
+            "cap_rate": {
+                "type": ["number", "null"],
+                "description": "As decimal, e.g. 0.055 for 5.5%",
+            },
             "debt_service_coverage_ratio": {"type": ["number", "null"]},
-            "loan_to_value": {"type": ["number", "null"], "description": "As decimal, e.g. 0.70"},
+            "loan_to_value": {
+                "type": ["number", "null"],
+                "description": "As decimal, e.g. 0.70",
+            },
             "vacancy_rate": {"type": ["number", "null"], "description": "As decimal"},
             "gross_rent_multiplier": {"type": ["number", "null"]},
             "year_built": {"type": ["integer", "null"]},
             "square_footage": {"type": ["number", "null"]},
-            "units": {"type": ["integer", "null"], "description": "Unit count (multifamily only)"},
+            "units": {
+                "type": ["integer", "null"],
+                "description": "Unit count (multifamily only)",
+            },
             "red_flags": {
                 "type": "array",
                 "items": {"type": "string"},
                 "description": "Any concerns, inconsistencies, or missing critical information found",
             },
         },
-        "required": ["property_name", "property_type", "market", "purchase_price", "red_flags"],
+        "required": [
+            "property_name",
+            "property_type",
+            "market",
+            "purchase_price",
+            "red_flags",
+        ],
     },
 }
 

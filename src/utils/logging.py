@@ -8,6 +8,7 @@ filtering, and passthrough from third-party libs (uvicorn, langchain).
 Every agent, API handler, and background task calls get_logger(__name__).
 Output is JSON in production (LOG_FORMAT=json) and pretty-printed locally.
 """
+
 import logging
 import os
 import sys
@@ -62,8 +63,10 @@ def configure_logging() -> None:
 
     root_logger = logging.getLogger()
     # Avoid adding duplicate handlers on repeated configure_logging() calls
-    if not any(isinstance(h, logging.StreamHandler) and h.formatter is formatter
-               for h in root_logger.handlers):
+    if not any(
+        isinstance(h, logging.StreamHandler) and h.formatter is formatter
+        for h in root_logger.handlers
+    ):
         root_logger.handlers.clear()
         root_logger.addHandler(handler)
     root_logger.setLevel(log_level)
