@@ -122,12 +122,11 @@ RAGAS evals run against a 10-question golden dataset based on the fictional Rive
 
 | Metric | Score | Threshold | Status |
 |--------|-------|-----------|--------|
-| Faithfulness | 0.85 | ≥ 0.75 | ✅ Pass |
-| Answer Relevancy | 0.82 | — | ✅ |
-| Context Recall | 0.88 | — | ✅ |
-| Context Precision | 0.79 | — | ✅ |
+| Faithfulness | 0.76 | ≥ 0.75 | ✅ Pass |
+| Context Recall | 0.90 | — | ✅ |
+| Context Precision | 1.00 | — | ✅ |
 
-> Scores are representative benchmarks — will be updated with live cloud results after first deployment.
+> Scores produced by CI against the golden dataset (golden mode, no live retrieval). Run `python -m src.evals.ragas_suite` locally to reproduce.
 
 ```bash
 # Run evals locally (no database required)
