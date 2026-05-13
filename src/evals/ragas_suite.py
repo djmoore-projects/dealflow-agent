@@ -22,12 +22,13 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import Optional
-
-from datasets import Dataset
+from typing import TYPE_CHECKING, Optional
 
 from src.evals.golden_dataset import GOLDEN_QA_PAIRS
 from src.utils.logging import configure_logging, get_logger
+
+if TYPE_CHECKING:
+    from datasets import Dataset
 
 configure_logging()
 logger = get_logger(__name__)
@@ -35,12 +36,14 @@ logger = get_logger(__name__)
 FAITHFULNESS_THRESHOLD = float(os.getenv("FAITHFULNESS_THRESHOLD", "0.75"))
 
 
-def _build_golden_dataset() -> Dataset:
+def _build_golden_dataset() -> "Dataset":
     """Build a RAGAS Dataset using pre-written golden contexts.
 
     This mode does not require a running database. Contexts are the exact
     passages from the golden dataset, simulating perfect retrieval.
     """
+    from datasets import Dataset  # deferred: only needed when actually running evals
+
     return Dataset.from_dict(
         {
             "question": [qa["question"] for qa in GOLDEN_QA_PAIRS],
@@ -51,7 +54,7 @@ def _build_golden_dataset() -> Dataset:
     )
 
 
-def _build_live_dataset(job_id: Optional[str] = None) -> Dataset:
+def _build_live_dataset(job_id: Optional[str] = None) -> "Dataset":
     """Build a RAGAS Dataset using live retrieval from pgvector.
 
     Args:
@@ -60,6 +63,8 @@ def _build_live_dataset(job_id: Optional[str] = None) -> Dataset:
     Returns:
         RAGAS-compatible Dataset.
     """
+    from datasets import Dataset
+
     from src.rag.retrieval import retrieve_chunks
 
     questions = [qa["question"] for qa in GOLDEN_QA_PAIRS]
