@@ -54,6 +54,8 @@ jobs:
 
       - name: Run RAGAS eval suite (golden mode — no live retrieval required)
         # Uses pre-written golden contexts, not pgvector. Fails if faithfulness < 0.75.
+        # Skipped when OPENAI_API_KEY is not set (e.g. forks without secrets).
+        if: ${{ secrets.OPENAI_API_KEY != '' }}
         run: python -m src.evals.ragas_suite
 
       - name: Upload coverage report
