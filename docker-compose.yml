@@ -25,6 +25,8 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://dealflow:dealflow@postgres:5432/dealflow
       LOG_FORMAT: json
+      # LangSmith — picked up from .env if LANGCHAIN_API_KEY is set
+      LANGCHAIN_PROJECT: ${LANGCHAIN_PROJECT:-dealflow-agent}
     env_file:
       - .env
     depends_on:

@@ -18,6 +18,7 @@ import os
 from typing import Any
 
 import anthropic
+from langsmith import traceable
 
 from src.utils.logging import get_logger
 
@@ -107,6 +108,12 @@ _SYSTEM_PROMPT = (
 )
 
 
+@traceable(
+    name="RiskAnalystAgent",
+    run_type="chain",
+    tags=["dealflow-agent", "risk-analyst"],
+    metadata={"version": "1.0"},
+)
 async def run_risk_analyst(state: dict) -> dict:
     """Score deal risk using deal_metrics and market_data.
 

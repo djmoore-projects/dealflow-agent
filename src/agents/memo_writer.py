@@ -19,6 +19,7 @@ import os
 from typing import Any
 
 import anthropic
+from langsmith import traceable
 
 from src.utils.logging import get_logger
 
@@ -104,6 +105,12 @@ _SYSTEM_PROMPT = (
 )
 
 
+@traceable(
+    name="MemoWriterAgent",
+    run_type="chain",
+    tags=["dealflow-agent", "memo-writer"],
+    metadata={"version": "1.0"},
+)
 async def run_memo_writer(state: dict) -> dict:
     """Synthesize all agent outputs into a structured investment memo.
 

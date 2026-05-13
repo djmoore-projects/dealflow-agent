@@ -18,7 +18,8 @@ import time
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile
+from langchain_core.runnables import RunnableConfig
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, UploadFile
 from pypdf import PdfReader
 
 from src.agents.supervisor import AgentState, build_graph
@@ -29,6 +30,7 @@ from src.api.models import (
     StatusResponse,
 )
 from src.utils.logging import get_logger
+from src.utils.tracing import TracingConfig
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -56,7 +58,7 @@ def _extract_pdf_text(pdf_bytes: bytes) -> str:
     return "\n\n".join(pages)
 
 
-async def _run_pipeline(job_id: str, document_text: str) -> None:
+async def _run_pipeline(job_id: str, document_text: str, tracing: TracingConfig) -> None:
     """Execute the LangGraph pipeline for a job. Runs as a background task."""
     logger.info("Pipeline starting", job_id=job_id)
     JOB_STORE[job_id]["status"] = JobStatus.RUNNING
@@ -74,13 +76,27 @@ async def _run_pipeline(job_id: str, document_text: str) -> None:
         "job_id": job_id,
     }
 
+    # Pre-generate a run_id so we can retrieve the LangSmith trace URL after
+    # ainvoke completes. When tracing is disabled this ID is still generated
+    # but never sent anywhere.
+    langgraph_run_id = uuid.uuid4()
+    run_config = RunnableConfig(
+        run_id=langgraph_run_id,
+        tags=["dealflow-agent"],
+        metadata={"job_id": job_id},
+    )
+
     try:
         t0 = time.monotonic()
-        final_state = await _GRAPH.ainvoke(initial_state)
+        final_state = await _GRAPH.ainvoke(initial_state, config=run_config)
         latency_ms = int((time.monotonic() - t0) * 1000)
 
         JOB_STORE[job_id]["state"] = final_state
         JOB_STORE[job_id]["latency_ms"] = latency_ms
+
+        # Resolve LangSmith URL — does a single API call; None if tracing off
+        JOB_STORE[job_id]["langsmith_trace_url"] = tracing.get_run_url(langgraph_run_id)
+
         has_error = bool(final_state.get("error"))
         JOB_STORE[job_id]["status"] = JobStatus.FAILED if has_error else JobStatus.COMPLETE
         logger.info(
@@ -89,6 +105,7 @@ async def _run_pipeline(job_id: str, document_text: str) -> None:
             status=JOB_STORE[job_id]["status"],
             latency_ms=latency_ms,
             tokens=final_state.get("total_tokens_used", 0),
+            langsmith_run_id=str(langgraph_run_id),
             error=final_state.get("error"),
         )
     except Exception as exc:
@@ -99,6 +116,7 @@ async def _run_pipeline(job_id: str, document_text: str) -> None:
 
 @router.post("/analyze", response_model=AnalyzeResponse, status_code=202)
 async def analyze(
+    request: Request,
     file: UploadFile,
     background_tasks: BackgroundTasks,
 ) -> AnalyzeResponse:
@@ -128,7 +146,8 @@ async def analyze(
     job_id = str(uuid.uuid4())
     JOB_STORE[job_id] = {"status": JobStatus.QUEUED, "state": None, "error": None}
 
-    background_tasks.add_task(_run_pipeline, job_id, document_text)
+    tracing: TracingConfig = getattr(request.app.state, "tracing", TracingConfig(api_key=None, project="dealflow-agent"))
+    background_tasks.add_task(_run_pipeline, job_id, document_text, tracing)
     logger.info("Job enqueued", job_id=job_id, filename=file.filename, text_chars=len(document_text))
 
     return AnalyzeResponse(job_id=job_id)

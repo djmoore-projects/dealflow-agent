@@ -16,6 +16,7 @@ import os
 from typing import Any
 
 import anthropic
+from langsmith import traceable
 
 from src.utils.logging import get_logger
 
@@ -66,6 +67,12 @@ _SYSTEM_PROMPT = (
 )
 
 
+@traceable(
+    name="DocumentAnalystAgent",
+    run_type="chain",
+    tags=["dealflow-agent", "document-analyst"],
+    metadata={"version": "1.0"},
+)
 async def run_document_analyst(state: dict) -> dict:
     """Extract deal metrics from state.document_text using Claude tool use.
 

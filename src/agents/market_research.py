@@ -15,6 +15,7 @@ import os
 from typing import Any
 
 import anthropic
+from langsmith import traceable
 
 from src.utils.logging import get_logger
 
@@ -93,6 +94,12 @@ def _tavily_search(query: str) -> str:
         return json.dumps([{"url": "stub", "content": f"Market data unavailable: {exc}"}])
 
 
+@traceable(
+    name="MarketResearchAgent",
+    run_type="chain",
+    tags=["dealflow-agent", "market-research"],
+    metadata={"version": "1.0"},
+)
 async def run_market_research(state: dict) -> dict:
     """Research market conditions for the subject deal.
 
