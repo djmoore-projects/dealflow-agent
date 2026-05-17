@@ -27,7 +27,6 @@ from __future__ import annotations
 import os
 import uuid
 from dataclasses import dataclass, field
-from typing import Optional
 
 from src.utils.logging import get_logger
 
@@ -38,7 +37,7 @@ logger = get_logger(__name__)
 class TracingConfig:
     """Encapsulates LangSmith connection settings read from environment."""
 
-    api_key: Optional[str]
+    api_key: str | None
     project: str
     enabled: bool = field(init=False)
 
@@ -46,7 +45,7 @@ class TracingConfig:
         self.enabled = bool(self.api_key)
 
     @classmethod
-    def from_env(cls) -> "TracingConfig":
+    def from_env(cls) -> TracingConfig:
         """Read config from environment variables."""
         return cls(
             api_key=os.getenv("LANGCHAIN_API_KEY"),
@@ -68,7 +67,7 @@ class TracingConfig:
         os.environ["LANGCHAIN_PROJECT"] = self.project
         logger.info("LangSmith tracing enabled", project=self.project)
 
-    def get_run_url(self, run_id: str | uuid.UUID) -> Optional[str]:
+    def get_run_url(self, run_id: str | uuid.UUID) -> str | None:
         """Return the LangSmith UI URL for a completed run.
 
         Fetches the URL via the LangSmith client so we get the exact
@@ -90,7 +89,7 @@ class TracingConfig:
 
             client = Client(api_key=self.api_key)
             run = client.read_run(str(run_id))
-            url: Optional[str] = getattr(run, "url", None)
+            url: str | None = getattr(run, "url", None)
             logger.info("LangSmith run URL retrieved", run_id=str(run_id), url=url)
             return url
         except Exception as exc:

@@ -7,7 +7,7 @@ the MemoWriter agent can cite with page numbers.
 """
 
 import os
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
@@ -25,9 +25,9 @@ class RetrievedChunk(BaseModel):
     """A single document chunk returned from similarity search."""
 
     content: str
-    page_number: Optional[int] = None
-    source: Optional[str] = None
-    job_id: Optional[str] = None
+    page_number: int | None = None
+    source: str | None = None
+    job_id: str | None = None
     score: float
 
 
@@ -55,7 +55,7 @@ def _get_store() -> "PGVector":
 def retrieve_chunks(
     query: str,
     k: int = 5,
-    job_id: Optional[str] = None,
+    job_id: str | None = None,
 ) -> list[RetrievedChunk]:
     """Retrieve the top-k chunks most similar to query.
 

@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from src.evals.golden_dataset import GOLDEN_QA_PAIRS
 from src.utils.logging import configure_logging, get_logger
@@ -37,7 +37,7 @@ logger = get_logger(__name__)
 FAITHFULNESS_THRESHOLD = float(os.getenv("FAITHFULNESS_THRESHOLD", "0.75"))
 
 
-def _build_golden_dataset() -> "Dataset":
+def _build_golden_dataset() -> Dataset:
     """Build a RAGAS Dataset using pre-written golden contexts.
 
     This mode does not require a running database. Contexts are the exact
@@ -55,7 +55,7 @@ def _build_golden_dataset() -> "Dataset":
     )
 
 
-def _build_live_dataset(job_id: Optional[str] = None) -> "Dataset":
+def _build_live_dataset(job_id: str | None = None) -> Dataset:
     """Build a RAGAS Dataset using live retrieval from pgvector.
 
     Args:
@@ -88,7 +88,7 @@ def _build_live_dataset(job_id: Optional[str] = None) -> "Dataset":
     )
 
 
-def run_evals(live: bool = False, job_id: Optional[str] = None) -> dict[str, float]:
+def run_evals(live: bool = False, job_id: str | None = None) -> dict[str, float]:
     """Run the RAGAS evaluation suite and return metric scores.
 
     Args:

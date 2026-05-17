@@ -35,7 +35,6 @@ if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from mcp.server.fastmcp import FastMCP
-
 from src.rag.retrieval import RetrievedChunk, retrieve_chunks
 from src.utils.logging import configure_logging, get_logger
 

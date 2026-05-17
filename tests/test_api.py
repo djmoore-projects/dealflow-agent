@@ -179,9 +179,10 @@ async def test_result_complete_job(client: AsyncClient) -> None:
 
 def _make_authed_app():
     """Build a fresh app instance with API_KEY set, bypassing module-level cache."""
-    from src.api.main import ApiKeyMiddleware, analyze_router
     from fastapi import FastAPI
     from fastapi.middleware.cors import CORSMiddleware
+
+    from src.api.main import ApiKeyMiddleware, analyze_router
 
     _app = FastAPI()
     _app.add_middleware(ApiKeyMiddleware, api_key="secret-test-key")

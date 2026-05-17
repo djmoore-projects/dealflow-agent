@@ -10,8 +10,8 @@ so LangSmith's LANGCHAIN_TRACING_V2 env var is set before chain construction.
 from __future__ import annotations
 
 import os
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,7 +21,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from src.api.routes.analyze import router as analyze_router
 from src.utils.logging import configure_logging, get_logger
 from src.utils.tracing import TracingConfig
-
 
 _UNAUTHENTICATED_PATHS = {"/health"}
 

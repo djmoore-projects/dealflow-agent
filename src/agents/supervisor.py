@@ -19,7 +19,7 @@ that field to decide whether to advance or halt.
 from __future__ import annotations
 
 import operator
-from typing import Annotated, Optional
+from typing import Annotated
 
 from langchain_core.messages import BaseMessage
 from langgraph.graph import END, START, StateGraph
@@ -51,14 +51,14 @@ class AgentState(TypedDict):
     document_text: str
 
     # Outputs written by each sub-agent (None until that agent runs)
-    deal_metrics: Optional[dict]
-    market_data: Optional[dict]
-    risk_scores: Optional[dict]
-    memo_draft: Optional[str]
+    deal_metrics: dict | None
+    market_data: dict | None
+    risk_scores: dict | None
+    memo_draft: str | None
 
     # Observability fields updated by the supervisor on each pass
     current_agent: str
-    error: Optional[str]
+    error: str | None
 
     # Token usage accumulated across all agent nodes via operator.add reducer.
     # Each agent returns {"total_tokens_used": N} and LangGraph sums them.

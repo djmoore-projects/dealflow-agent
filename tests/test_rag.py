@@ -19,7 +19,6 @@ import pytest
 
 from src.rag.retrieval import RetrievedChunk
 
-
 # --- retrieve_chunks ---
 
 

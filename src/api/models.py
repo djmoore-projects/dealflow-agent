@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -36,9 +36,9 @@ class StatusResponse(BaseModel):
 
     job_id: str
     status: JobStatus
-    current_agent: Optional[str] = None
+    current_agent: str | None = None
     progress_pct: int = Field(ge=0, le=100)
-    error: Optional[str] = None
+    error: str | None = None
 
     @field_validator("progress_pct", mode="before")
     @classmethod
@@ -80,25 +80,25 @@ class MemoResult(BaseModel):
 
     job_id: str
     status: JobStatus
-    deal_metrics: Optional[dict[str, Any]] = None
-    market_data: Optional[dict[str, Any]] = None
-    risk_scores: Optional[dict[str, Any]] = None
-    memo: Optional[dict[str, Any]] = None
-    error: Optional[str] = None
+    deal_metrics: dict[str, Any] | None = None
+    market_data: dict[str, Any] | None = None
+    risk_scores: dict[str, Any] | None = None
+    memo: dict[str, Any] | None = None
+    error: str | None = None
 
     # Observability fields — populated after pipeline completes
-    latency_ms: Optional[int] = None
-    total_tokens: Optional[int] = None
-    langsmith_trace_url: Optional[str] = None
+    latency_ms: int | None = None
+    total_tokens: int | None = None
+    langsmith_trace_url: str | None = None
 
     @classmethod
     def from_agent_state(
         cls,
         job_id: str,
         state: dict[str, Any],
-        latency_ms: Optional[int] = None,
-        langsmith_trace_url: Optional[str] = None,
-    ) -> "MemoResult":
+        latency_ms: int | None = None,
+        langsmith_trace_url: str | None = None,
+    ) -> MemoResult:
         """Construct a MemoResult from a completed AgentState dict."""
         memo_json = state.get("memo_draft")
         memo = json.loads(memo_json) if memo_json else None

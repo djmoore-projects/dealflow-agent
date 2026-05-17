@@ -37,7 +37,15 @@ dev = [
     "httpx>=0.28.1",
     "pytest-cov>=6.0.0",
     "respx>=0.21.1",
+    "ruff>=0.4.0",
 ]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

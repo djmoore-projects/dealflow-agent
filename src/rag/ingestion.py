@@ -95,7 +95,6 @@ def ingest_text(text: str, metadata: dict[str, Any], job_id: str) -> int:
         Number of chunks ingested.
     """
     from langchain_core.documents import Document
-
     from langchain_text_splitters import RecursiveCharacterTextSplitter
 
     splitter = RecursiveCharacterTextSplitter(
