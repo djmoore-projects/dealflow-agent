@@ -9,15 +9,44 @@ so LangSmith's LANGCHAIN_TRACING_V2 env var is set before chain construction.
 
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.api.routes.analyze import router as analyze_router
 from src.utils.logging import configure_logging, get_logger
 from src.utils.tracing import TracingConfig
+
+
+_UNAUTHENTICATED_PATHS = {"/health"}
+
+
+class ApiKeyMiddleware(BaseHTTPMiddleware):
+    """Require X-API-Key header when API_KEY env var is set.
+
+    When API_KEY is not set (local dev), all requests pass through.
+    When set (production), requests without a matching key receive 401.
+    Health check is always unauthenticated so load balancers work without keys.
+    """
+
+    def __init__(self, app: FastAPI, api_key: str | None) -> None:
+        super().__init__(app)
+        self._api_key = api_key
+
+    async def dispatch(self, request: Request, call_next):  # type: ignore[override]
+        if self._api_key and request.url.path not in _UNAUTHENTICATED_PATHS:
+            incoming = request.headers.get("X-API-Key", "")
+            if incoming != self._api_key:
+                return JSONResponse(
+                    status_code=401,
+                    content={"detail": "Invalid or missing X-API-Key header"},
+                )
+        return await call_next(request)
 
 
 @asynccontextmanager
@@ -44,9 +73,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(ApiKeyMiddleware, api_key=os.getenv("API_KEY"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Phase 2: restrict to frontend origin in prod
+    allow_origins=["*"],  # restrict to frontend origin in prod via API_KEY + CORS config
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -36,7 +36,19 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 # In-process job store: job_id → {"status": ..., "state": AgentState | None, ...}
+# Jobs older than JOB_TTL_SECONDS are evicted on each new submission.
 JOB_STORE: dict[str, dict[str, Any]] = {}
+JOB_TTL_SECONDS = 86_400  # 24 hours
+
+
+def _evict_expired_jobs() -> None:
+    """Remove jobs older than JOB_TTL_SECONDS. Called on each new submission."""
+    cutoff = time.monotonic() - JOB_TTL_SECONDS
+    expired = [jid for jid, job in JOB_STORE.items() if job.get("created_at", 0) < cutoff]
+    for jid in expired:
+        del JOB_STORE[jid]
+    if expired:
+        logger.info("Evicted expired jobs", count=len(expired))
 
 # Compiled graph — built once at module load, reused for all jobs
 _GRAPH = build_graph()
@@ -135,9 +147,12 @@ async def analyze(
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=422, detail="Only PDF files are accepted")
 
-    pdf_bytes = await file.read()
+    MAX_PDF_BYTES = 50 * 1024 * 1024  # 50 MB
+    pdf_bytes = await file.read(MAX_PDF_BYTES + 1)
     if len(pdf_bytes) == 0:
         raise HTTPException(status_code=422, detail="Uploaded file is empty")
+    if len(pdf_bytes) > MAX_PDF_BYTES:
+        raise HTTPException(status_code=413, detail="File exceeds 50 MB limit")
 
     try:
         document_text = _extract_pdf_text(pdf_bytes)
@@ -152,8 +167,15 @@ async def analyze(
             detail="PDF contains no extractable text (may be scanned image)",
         )
 
+    _evict_expired_jobs()
+
     job_id = str(uuid.uuid4())
-    JOB_STORE[job_id] = {"status": JobStatus.QUEUED, "state": None, "error": None}
+    JOB_STORE[job_id] = {
+        "status": JobStatus.QUEUED,
+        "state": None,
+        "error": None,
+        "created_at": time.monotonic(),
+    }
 
     tracing: TracingConfig = getattr(
         request.app.state,

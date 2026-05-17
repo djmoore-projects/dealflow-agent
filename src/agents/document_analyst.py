@@ -116,6 +116,17 @@ async def run_document_analyst(state: dict) -> dict:
     job_id = state.get("job_id", "unknown")
     logger.info("DocumentAnalyst starting", job_id=job_id)
 
+    MAX_CHARS = 80_000
+    text = state["document_text"]
+    if len(text) > MAX_CHARS:
+        logger.warning(
+            "Document truncated for extraction",
+            job_id=job_id,
+            original_chars=len(text),
+            limit=MAX_CHARS,
+        )
+    text = text[:MAX_CHARS]
+
     client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
     model = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
 
@@ -131,7 +142,7 @@ async def run_document_analyst(state: dict) -> dict:
                     "role": "user",
                     "content": (
                         "Extract all deal metrics from this document:\n\n"
-                        + state["document_text"][:12000]
+                        + text
                     ),
                 }
             ],

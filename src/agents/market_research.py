@@ -11,6 +11,7 @@ queries (e.g., "Austin TX multifamily cap rates Q1 2025").
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 from typing import Any
@@ -186,7 +187,9 @@ async def run_market_research(state: dict) -> dict:
             tool_results = []
             for block in response.content:
                 if block.type == "tool_use" and block.name == "web_search":
-                    search_result = _tavily_search(block.input["query"])
+                    search_result = await asyncio.to_thread(
+                        _tavily_search, block.input["query"]
+                    )
                     tool_results.append(
                         {
                             "type": "tool_result",

@@ -10,6 +10,7 @@ Tests cover:
   - GET /status: known/unknown job IDs, progress transitions
   - GET /result: queued/running/complete/failed states
   - GET /health: liveness probe
+  - API key auth: missing key, wrong key, correct key, health bypass
 """
 
 from __future__ import annotations
@@ -174,6 +175,62 @@ async def test_result_complete_job(client: AsyncClient) -> None:
         )
     finally:
         JOB_STORE.pop(job_id, None)
+
+
+def _make_authed_app():
+    """Build a fresh app instance with API_KEY set, bypassing module-level cache."""
+    from src.api.main import ApiKeyMiddleware, analyze_router
+    from fastapi import FastAPI
+    from fastapi.middleware.cors import CORSMiddleware
+
+    _app = FastAPI()
+    _app.add_middleware(ApiKeyMiddleware, api_key="secret-test-key")
+    _app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+    _app.include_router(analyze_router)
+
+    @_app.get("/health")
+    async def health():
+        return {"status": "ok"}
+
+    return _app
+
+
+@pytest.mark.asyncio
+async def test_api_key_health_always_passes() -> None:
+    """Health endpoint is reachable without X-API-Key even when auth is enabled."""
+    _app = _make_authed_app()
+    async with AsyncClient(transport=ASGITransport(_app), base_url="http://test") as c:
+        response = await c.get("/health")
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_api_key_blocks_missing_key() -> None:
+    """Requests without X-API-Key are rejected with 401 when API_KEY is set."""
+    _app = _make_authed_app()
+    async with AsyncClient(transport=ASGITransport(_app), base_url="http://test") as c:
+        response = await c.get("/status/some-id")
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_api_key_blocks_wrong_key() -> None:
+    """Requests with the wrong key are rejected with 401."""
+    _app = _make_authed_app()
+    async with AsyncClient(transport=ASGITransport(_app), base_url="http://test") as c:
+        response = await c.get("/status/some-id", headers={"X-API-Key": "wrong-key"})
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_api_key_allows_correct_key() -> None:
+    """Requests with the correct key pass through (404 means auth passed, not blocked)."""
+    _app = _make_authed_app()
+    async with AsyncClient(transport=ASGITransport(_app), base_url="http://test") as c:
+        response = await c.get(
+            "/status/nonexistent-id", headers={"X-API-Key": "secret-test-key"}
+        )
+    assert response.status_code == 404  # auth passed; job not found
 
 
 @pytest.mark.asyncio

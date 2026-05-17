@@ -89,7 +89,7 @@ class MemoResult(BaseModel):
     # Observability fields — populated after pipeline completes
     latency_ms: Optional[int] = None
     total_tokens: Optional[int] = None
-    langsmith_trace_url: Optional[str] = None  # populated in Workstream B
+    langsmith_trace_url: Optional[str] = None
 
     @classmethod
     def from_agent_state(

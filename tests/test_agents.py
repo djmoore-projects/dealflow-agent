@@ -228,6 +228,207 @@ def test_supervisor_halts_on_error() -> None:
     assert _route(state) == END
 
 
+# --- MarketResearchAgent ---
+
+MOCK_MARKET_DATA = {
+    "market_cap_rate_range": {"low": 0.05, "high": 0.065},
+    "market_vacancy_rate": 0.07,
+    "avg_rent_psf": 22.50,
+    "rent_growth_yoy": 0.03,
+    "comparable_sales": [],
+    "market_summary": "Austin multifamily remains tight with sub-8% vacancy.",
+    "data_sources": ["CoStar Q1 2025", "CBRE Austin Market Report"],
+}
+
+
+@pytest.mark.asyncio
+async def test_market_research_success() -> None:
+    """MarketResearch writes market_data to state when record_market_data is called."""
+    record_block = MagicMock()
+    record_block.type = "tool_use"
+    record_block.name = "record_market_data"
+    record_block.input = MOCK_MARKET_DATA
+
+    response = MagicMock()
+    response.content = [record_block]
+    response.usage.input_tokens = 100
+    response.usage.output_tokens = 50
+
+    with patch("src.agents.market_research.anthropic.AsyncAnthropic") as MockClient:
+        instance = MockClient.return_value
+        instance.messages.create = AsyncMock(return_value=response)
+
+        from src.agents.market_research import run_market_research
+
+        state = {
+            "job_id": "test-005",
+            "deal_metrics": {
+                "property_type": "multifamily",
+                "market": "Austin, TX",
+                "cap_rate": 0.055,
+            },
+        }
+        result = await run_market_research(state)
+
+    assert "market_data" in result
+    assert result["market_data"]["market_summary"] == MOCK_MARKET_DATA["market_summary"]
+    assert result["market_data"]["market_cap_rate_range"] == {"low": 0.05, "high": 0.065}
+    assert "error" not in result
+
+
+@pytest.mark.asyncio
+async def test_market_research_api_error() -> None:
+    """MarketResearch writes error to state on API failure."""
+    with patch("src.agents.market_research.anthropic.AsyncAnthropic") as MockClient:
+        instance = MockClient.return_value
+        instance.messages.create = AsyncMock(side_effect=RuntimeError("timeout"))
+
+        from src.agents.market_research import run_market_research
+
+        state = {
+            "job_id": "test-006",
+            "deal_metrics": {"property_type": "multifamily", "market": "Austin, TX"},
+        }
+        result = await run_market_research(state)
+
+    assert "error" in result
+    assert "market_research" in result["error"]
+    assert "market_data" not in result
+
+
+@pytest.mark.asyncio
+async def test_market_research_web_search_loop() -> None:
+    """MarketResearch handles a web_search round before record_market_data."""
+    search_block = MagicMock()
+    search_block.type = "tool_use"
+    search_block.name = "web_search"
+    search_block.id = "tu_search_001"
+    search_block.input = {"query": "Austin TX multifamily cap rates 2025"}
+
+    search_response = MagicMock()
+    search_response.content = [search_block]
+    search_response.usage.input_tokens = 80
+    search_response.usage.output_tokens = 30
+
+    record_block = MagicMock()
+    record_block.type = "tool_use"
+    record_block.name = "record_market_data"
+    record_block.input = MOCK_MARKET_DATA
+
+    record_response = MagicMock()
+    record_response.content = [record_block]
+    record_response.usage.input_tokens = 200
+    record_response.usage.output_tokens = 80
+
+    with patch("src.agents.market_research.anthropic.AsyncAnthropic") as MockClient:
+        with patch("src.agents.market_research._tavily_search", return_value='[]'):
+            instance = MockClient.return_value
+            instance.messages.create = AsyncMock(
+                side_effect=[search_response, record_response]
+            )
+
+            from src.agents.market_research import run_market_research
+
+            state = {
+                "job_id": "test-007",
+                "deal_metrics": {
+                    "property_type": "multifamily",
+                    "market": "Austin, TX",
+                    "cap_rate": 0.055,
+                },
+            }
+            result = await run_market_research(state)
+
+    assert "market_data" in result
+    assert "error" not in result
+    # Two rounds: search + record
+    assert instance.messages.create.call_count == 2
+
+
+# --- MemoWriterAgent ---
+
+MOCK_MEMO = {
+    "executive_summary": "Riverside Commons is a 120-unit multifamily in Austin, TX.",
+    "property_overview": {
+        "name": "Riverside Commons",
+        "type": "multifamily",
+        "market": "Austin, TX",
+        "purchase_price_usd": 18_000_000,
+        "description": "2018-vintage, 120-unit Class A multifamily.",
+    },
+    "financial_summary": {
+        "noi_usd": 990_000,
+        "cap_rate_pct": 5.5,
+        "dscr": 1.28,
+        "ltv_pct": 75.0,
+        "vacancy_pct": 7.0,
+        "analysis": "Financials are in line with underwriting standards.",
+    },
+    "market_context": "Austin multifamily vacancy is 7%, trending stable.",
+    "risk_assessment": {
+        "overall_score": 2.2,
+        "recommendation": "conditional_pass",
+        "dimension_summary": "Financial and execution risk are low; market risk moderate.",
+        "key_risks": ["Rising vacancy", "HVAC capex"],
+        "mitigants": ["Strong DSCR buffer", "Sponsor track record"],
+    },
+    "recommendation": "Conditional pass subject to HVAC reserve escrow.",
+    "data_citations": [
+        {"claim": "Cap rate 5.5%", "source": "Offering Memorandum p.12"},
+    ],
+}
+
+
+@pytest.mark.asyncio
+async def test_memo_writer_success() -> None:
+    """MemoWriter writes memo_draft JSON to state on valid Claude response."""
+    mock_response = _make_tool_use_response("write_investment_memo", MOCK_MEMO)
+
+    with patch("src.agents.memo_writer.anthropic.AsyncAnthropic") as MockClient:
+        instance = MockClient.return_value
+        instance.messages.create = AsyncMock(return_value=mock_response)
+
+        from src.agents.memo_writer import run_memo_writer
+
+        state = {
+            "job_id": "test-008",
+            "deal_metrics": MOCK_DEAL_METRICS,
+            "market_data": MOCK_MARKET_DATA,
+            "risk_scores": MOCK_RISK_SCORES,
+        }
+        result = await run_memo_writer(state)
+
+    import json
+
+    assert "memo_draft" in result
+    memo = json.loads(result["memo_draft"])
+    assert memo["executive_summary"] == MOCK_MEMO["executive_summary"]
+    assert memo["risk_assessment"]["overall_score"] == 2.2
+    assert "error" not in result
+
+
+@pytest.mark.asyncio
+async def test_memo_writer_api_error() -> None:
+    """MemoWriter writes error to state on API failure."""
+    with patch("src.agents.memo_writer.anthropic.AsyncAnthropic") as MockClient:
+        instance = MockClient.return_value
+        instance.messages.create = AsyncMock(side_effect=ValueError("context limit"))
+
+        from src.agents.memo_writer import run_memo_writer
+
+        state = {
+            "job_id": "test-009",
+            "deal_metrics": {},
+            "market_data": {},
+            "risk_scores": {},
+        }
+        result = await run_memo_writer(state)
+
+    assert "error" in result
+    assert "memo_writer" in result["error"]
+    assert "memo_draft" not in result
+
+
 def test_supervisor_routes_to_end_when_complete() -> None:
     """Supervisor routes to END when all outputs are populated."""
     from langgraph.graph import END

@@ -15,6 +15,7 @@ MemoWriter uses to populate the Risk Assessment section of the memo.
 
 from __future__ import annotations
 
+import json
 import os
 from typing import Any
 
@@ -137,8 +138,6 @@ async def run_risk_analyst(state: dict) -> dict:
     """
     job_id = state.get("job_id", "unknown")
     logger.info("RiskAnalyst starting", job_id=job_id)
-
-    import json
 
     deal = state.get("deal_metrics", {})
     market = state.get("market_data", {})
