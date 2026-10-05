@@ -3,15 +3,9 @@
 **Multi-agent AI system for commercial real estate investment analysis.**
 Upload a deal PDF. Get a structured investment memo in under 60 seconds.
 
-![Tests](https://img.shields.io/badge/tests-22%20passed-brightgreen)
+[![CI](https://github.com/djmoore-projects/dealflow-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/djmoore-projects/dealflow-agent/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11-blue)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
-
----
-
-## Demo
-
-> **[Loom walkthrough coming — record after first cloud deploy]**
 
 ---
 

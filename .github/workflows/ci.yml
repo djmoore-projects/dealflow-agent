@@ -5,6 +5,7 @@ on:
     branches: ["**"]
   pull_request:
     branches: [main]
+  workflow_dispatch:  # run manually to include the paid RAGAS eval step
 
 jobs:
   test:
@@ -57,8 +58,8 @@ jobs:
 
       - name: Run RAGAS eval suite (golden mode — no live retrieval required)
         # Uses pre-written golden contexts, not pgvector. Fails if faithfulness < 0.75.
-        # Skipped when OPENAI_API_KEY is not set (e.g. forks without secrets).
-        if: env.OPENAI_API_KEY != ''
+        # Calls paid APIs, so it runs only on manual dispatch (and only when the key is set).
+        if: github.event_name == 'workflow_dispatch' && env.OPENAI_API_KEY != ''
         run: python -m src.evals.ragas_suite
 
       - name: Upload coverage report

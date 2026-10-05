@@ -1,8 +1,7 @@
 name: Deploy to AWS ECS
 
+# Manual only: runs once the Terraform stack in infra/ is applied and AWS_ROLE_ARN is set.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       image_tag:
