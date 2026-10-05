@@ -46,6 +46,8 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
+# UP042: StrEnum changes str() of members; JobStatus values are compared and serialized as (str, Enum).
+ignore = ["UP042"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -25,18 +25,31 @@ from httpx import ASGITransport, AsyncClient
 from src.api.main import app
 from src.api.models import JobStatus
 
-# Minimal valid PDF bytes (enough to pass pypdf parsing)
-_MINIMAL_PDF = (
-    b"%PDF-1.4\n"
-    b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
-    b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"
-    b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
-    b"/Contents 4 0 R /Resources << >> >>\nendobj\n"
-    b"4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 12 Tf 100 700 Td (Riverside Commons) Tj ET\nendstream\nendobj\n"
-    b"xref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n"
-    b"0000000115 00000 n\n0000000266 00000 n\n"
-    b"trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n360\n%%EOF"
-)
+
+def _build_minimal_pdf(text: str) -> bytes:
+    """One-page PDF with real xref offsets and a defined font, so pypdf extracts *text*."""
+    stream = f"BT /F1 12 Tf 100 700 Td ({text}) Tj ET".encode()
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R "
+        b"/Resources << /Font << /F1 5 0 R >> >> >>",
+        b"<< /Length %d >>\nstream\n" % len(stream) + stream + b"\nendstream",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    ]
+    out = b"%PDF-1.4\n"
+    offsets = []
+    for i, body in enumerate(objects, start=1):
+        offsets.append(len(out))
+        out += b"%d 0 obj\n" % i + body + b"\nendobj\n"
+    xref = len(out)
+    out += b"xref\n0 %d\n0000000000 65535 f \n" % (len(objects) + 1)
+    out += b"".join(b"%010d 00000 n \n" % o for o in offsets)
+    out += b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF" % (len(objects) + 1, xref)
+    return out
+
+
+_MINIMAL_PDF = _build_minimal_pdf("Riverside Commons")
 
 
 @pytest.fixture
